@@ -42,40 +42,18 @@ def auto_record_voice(duration=5):
     stream = p.open(format=sample_format, channels=channels, rate=fs, input=True, frames_per_buffer=chunk)
     frames = []
 
-    # Start face detection
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    video_capture = cv2.VideoCapture(0)  # Start capturing video
-
-    # Start recording audio and detecting faces
+    # Record audio for the specified duration
     for _ in range(int(fs / chunk * duration)):
         data = stream.read(chunk)
         frames.append(data)
-
-        # Capture frame-by-frame for face detection
-        ret, frame = video_capture.read()
-        if ret:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
-            # Draw rectangles around detected faces
-            for (x, y, w, h) in faces:
-                cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
-
-            # Display the resulting frame
-            cv2.imshow('Face Detection', frame)
-
-        # Break the loop if 'q' is pressed (optional)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
 
     # Stop and cleanup
     stream.stop_stream()
     stream.close()
     p.terminate()
-    video_capture.release()
-    cv2.destroyAllWindows()
 
     # Save recorded audio in WAV format in the voice_files folder
-    file_path = os.path.join(app.config['VOICE_FILES_FOLDER'], "recorded_audio.wav")  # Save in voice_files folder
+    file_path = os.path.join(app.config['VOICE_FILES_FOLDER'], "recorded_audio.wav")
     with wave.open(file_path, 'wb') as wf:
         wf.setnchannels(channels)
         wf.setsampwidth(p.get_sample_size(sample_format))
@@ -83,9 +61,7 @@ def auto_record_voice(duration=5):
         wf.writeframes(b''.join(frames))
 
     print(f"Voice recorded and saved as {file_path}")
-    
     return file_path
-
 # Route to start recording voice (5 seconds)
 app.config['VOICE_FILES_FOLDER'] = './voice_files'  # Update this path as needed
 
